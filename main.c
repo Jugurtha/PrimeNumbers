@@ -30,7 +30,8 @@ int main(int argc, char *argv[]) {
         for (uint32_t k = 0; k < 2 && cpt < nbrPrimes; ++k) {
             //Compute next test number
             testNum = 6*index + (k?1:-1);
-            if(isPrimeWithMem(testNum,primes,cpt))
+            //if(isPrimeWithMem(testNum,primes,cpt))//For the tests using previously memorised primes
+            if(isPrime(testNum))
             {
                 primes[cpt] = testNum;
                 cpt++;
