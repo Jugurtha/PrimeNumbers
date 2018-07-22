@@ -7,8 +7,8 @@
 
 uint32_t squareRoot(uint32_t a_nInput);
 bool isPrime(uint32_t num);
+bool isPrimeWithMem(uint32_t num, const uint32_t *previousPrimes, uint32_t nbrPreviousPrimes);
 
-bool isPrime(uint32_t num);
 
 int main(int argc, char *argv[]) {
     printf("Sequential :\n");
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     primes[0] = 2;
     primes[1] = 3;
 
-    uint32_t testNum = 5;
+    uint32_t testNum;
     uint32_t cpt = 2;//primes counter
     uint32_t index = 1;
 
@@ -27,10 +27,10 @@ int main(int argc, char *argv[]) {
 
     while(cpt<nbrPrimes)
     {
-        for (uint32_t k = 0; k < 2; ++k) {
+        for (uint32_t k = 0; k < 2 && cpt < nbrPrimes; ++k) {
             //Compute next test number
             testNum = 6*index + (k?1:-1);
-            if(isPrime(testNum))
+            if(isPrimeWithMem(testNum,primes,cpt))
             {
                 primes[cpt] = testNum;
                 cpt++;
@@ -42,10 +42,12 @@ int main(int argc, char *argv[]) {
     wallClock =  clock() - wallClock;
     printf("wall clock time : %lf\n", (double) wallClock/CLOCKS_PER_SEC);
 
-    FILE *pfile = fopen("testPrimes.txt","w");
+    FILE *pfile = fopen("../Tests/testPrimes.txt","w");
     for (int i = 0; i < nbrPrimes; ++i)
        fprintf(pfile, "%d\n", primes[i]);
     fclose(pfile);
+
+    system("C:\\\"Program Files (x86)\"\\WinMerge\\WinMergeU /wl /u /e ..\\Tests\\primes.txt ..\\Tests\\testPrimes.txt");
 
     printf("%d -> %d\n",nbrPrimes, primes[nbrPrimes-1]);
 
@@ -56,12 +58,18 @@ int main(int argc, char *argv[]) {
 
 bool isPrime(uint32_t num) {
     uint32_t sqrtNum = squareRoot(num);
-    for (int i = 2; i <= sqrtNum; ++i) {
+    for (int i = 2; i <= sqrtNum; ++i)
         if(!(num % i))
             return false;
+    return true;
+}
 
-
-    }
+bool isPrimeWithMem(uint32_t num, const uint32_t *previousPrimes, uint32_t nbrPreviousPrimes)
+{
+    uint32_t sqrtNum = squareRoot(num);
+    for (int i = 0; i < nbrPreviousPrimes && previousPrimes[i] <= sqrtNum ; ++i)
+        if(!(num % previousPrimes[i]))
+            return false;
     return true;
 }
 
