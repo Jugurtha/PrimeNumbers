@@ -15,7 +15,13 @@ int main(int argc, char *argv[]) {
     uint32_t nbrPrimes = strtoul(argv[1],NULL,10);//Getting number of primes to find from stdin at lunch
     printf("Nbr Primes to find : %d\n",nbrPrimes);
 
-    uint32_t *primes = malloc(nbrPrimes* sizeof(uint32_t));
+    uint32_t *primes = NULL;
+    primes = malloc(nbrPrimes* sizeof(uint32_t));
+    if(primes==NULL)
+    {
+        perror("Unable to allocate memory for prime numbers.");
+        exit(EXIT_FAILURE);
+    }
     primes[0] = 2;
     primes[1] = 3;
 
@@ -43,12 +49,16 @@ int main(int argc, char *argv[]) {
     wallClock =  clock() - wallClock;
     printf("wall clock time : %lf\n", (double) wallClock/CLOCKS_PER_SEC);
 
-    FILE *pfile = fopen("../Tests/testPrimes.txt","w");
-    for (int i = 0; i < nbrPrimes; ++i)
-       fprintf(pfile, "%d\n", primes[i]);
-    fclose(pfile);
-
-    system("C:\\\"Program Files (x86)\"\\WinMerge\\WinMergeU /wl /u /e ..\\Tests\\primes.txt ..\\Tests\\testPrimes.txt");
+    FILE *pfile = NULL;
+    pfile = fopen("../Tests/testPrimes.txt","w");
+    if(pfile==NULL)
+        perror("Unable to open test output file.");
+    else{
+        for (int i = 0; i < nbrPrimes; ++i)
+            fprintf(pfile, "%d\n", primes[i]);
+        fclose(pfile);
+        system("C:\\\"Program Files (x86)\"\\WinMerge\\WinMergeU /wl /u /e ..\\Tests\\primes.txt ..\\Tests\\testPrimes.txt");
+    }
 
     printf("%d -> %d\n",nbrPrimes, primes[nbrPrimes-1]);
 
