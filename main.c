@@ -36,8 +36,8 @@ int main(int argc, char *argv[]) {
         for (uint32_t k = 0; k < 2 && cpt < nbrPrimes; ++k) {
             //Compute next test number
             testNum = 6*index + (k?1:-1);
-            //if(isPrimeWithMem(testNum,primes,cpt))//For the tests using previously memorised primes
-            if(isPrime(testNum))
+            if(isPrimeWithMem(testNum,primes,cpt))//For the tests using previously memorised primes
+            //if(isPrime(testNum))
             {
                 primes[cpt] = testNum;
                 cpt++;
@@ -69,19 +69,28 @@ int main(int argc, char *argv[]) {
 
 bool isPrime(uint32_t num) {
     uint32_t sqrtNum = squareRoot(num);
+    bool result = true;
     for (int i = 2; i <= sqrtNum; ++i)
         if(!(num % i))
-            return false;
-    return true;
+        {
+            result = false;
+            break;
+        }
+    return result;
 }
 
 bool isPrimeWithMem(uint32_t num, const uint32_t *previousPrimes, uint32_t nbrPreviousPrimes)
 {
     uint32_t sqrtNum = squareRoot(num);
-    for (int i = 0; i < nbrPreviousPrimes && previousPrimes[i] <= sqrtNum ; ++i)
+    bool result = true;
+    //TODO implement if(previousPrimes[i] > sqrtNum ) -> true
+    for (int i = 0; i < nbrPreviousPrimes ; ++i)
         if(!(num % previousPrimes[i]))
-            return false;
-    return true;
+        {
+            result = false;
+            break;
+        }
+    return result;
 }
 
 
