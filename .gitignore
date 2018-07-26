@@ -2,3 +2,4 @@
 cmake*
 Tests/*.zip
 Tests/*.txt
+Tests/*.xlsx

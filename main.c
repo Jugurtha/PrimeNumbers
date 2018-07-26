@@ -4,10 +4,20 @@
 #include <time.h>
 #include <stdbool.h>
 
+// By using the list of primes from http://www.naturalnumbers.org/primes.html we can approximate the distance between
+// two consecutive prime number in average to 16 (with average distance of 10,4729 and average
+// absolute deviation of 6,07694858 using a sample of 10000 primes). Using this, we can approximate the value of the
+// 1000000th prime to 16000000. So, by using the algorithm in isPrimeWithMem, with tests the prime numbers inferior to
+// sqrt(num) we can safely assume that a cache size of sqrt(16000000)=4000 elements will be sufficient.
+#define CACHE_SIZE (4000/4)
+#define NBR_SMALL_PRIMES 50
+
 
 uint32_t squareRoot(uint32_t a_nInput);
 bool isPrime(uint32_t num);
 bool isPrimeWithMem(uint32_t num, const uint32_t *previousPrimes, uint32_t nbrPreviousPrimes);
+uint32_t binarySearchGreaterOrEqual(const uint32_t arr[], uint32_t l, uint32_t r, uint32_t x);
+
 
 
 int main(int argc, char *argv[]) {
@@ -49,6 +59,8 @@ int main(int argc, char *argv[]) {
     wallClock =  clock() - wallClock;
     printf("wall clock time : %lf\n", (double) wallClock/CLOCKS_PER_SEC);
 
+    //Comparing results with the first 1000000 primes from http://www.naturalnumbers.org/primes.html using WinMerge
+    // (this is not portable)
     FILE *pfile = NULL;
     pfile = fopen("../Tests/testPrimes.txt","w");
     if(pfile==NULL)
@@ -82,14 +94,49 @@ bool isPrime(uint32_t num) {
 bool isPrimeWithMem(uint32_t num, const uint32_t *previousPrimes, uint32_t nbrPreviousPrimes)
 {
     uint32_t sqrtNum = squareRoot(num);
+    uint32_t limit = nbrPreviousPrimes;
+
+
+    //Verify if the element's index is cacheed
+    static uint32_t cache[CACHE_SIZE] = {0};
+    uint32_t cacheIndex = sqrtNum % CACHE_SIZE;
+
+    if(previousPrimes[cache[cacheIndex]] == sqrtNum)//if sqrtNum is a prime that was already cached
+        limit = cache[cacheIndex];
+    else
+    {
+        limit = binarySearchGreaterOrEqual(previousPrimes,0,nbrPreviousPrimes,sqrtNum);
+        cacheIndex = previousPrimes[limit] % CACHE_SIZE;
+        if(!cache[cacheIndex])// we add it to the cache if it's not already cashed
+            cache[cacheIndex] = limit;
+        else
+            if(cacheIndex > NBR_SMALL_PRIMES)// we change it if it's not too small
+                cache[cacheIndex] = limit;
+    }
+
+
     bool result = true;
-    //TODO implement if(previousPrimes[i] > sqrtNum ) -> true
-    for (int i = 0; i < nbrPreviousPrimes ; ++i)
+    for (int i = 0; i <= limit ; ++i)
         if(!(num % previousPrimes[i]))
         {
             result = false;
             break;
         }
+
+/*Dumping cache content in file for testing
+    if(num == 15485863) {
+        FILE *pfile = NULL;
+        pfile = fopen("../Tests/cache.txt", "w");
+        if (pfile == NULL)
+            perror("Unable to open cache output file.");
+        else {
+            for (int i = 0; i < CACHE_SIZE; ++i)
+                fprintf(pfile, "%d: %d\n", i, cache[i]);
+            fclose(pfile);
+        }
+    }
+//*/
+
     return result;
 }
 
