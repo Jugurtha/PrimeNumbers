@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
+#include <omp.h>
 
 // By using the list of primes from http://www.naturalnumbers.org/primes.html we can approximate the distance between
 // two consecutive prime number in average to 16 (with average distance of 10,4729 and average
@@ -11,6 +12,7 @@
 // sqrt(num) we can safely assume that a cache size of sqrt(16000000)=4000 elements will be sufficient.
 #define CACHE_SIZE (4000/4)
 #define NBR_SMALL_PRIMES 50
+#define NBR_THREADS 2
 
 
 uint32_t squareRoot(uint32_t a_nInput);
@@ -22,6 +24,13 @@ uint32_t binarySearchGreaterOrEqual(const uint32_t arr[], uint32_t l, uint32_t r
 
 int main(int argc, char *argv[]) {
     printf("Sequential :\n");
+
+    if(!omp_get_cancellation())
+    {
+        perror("OMP Cancellation disabled.");
+        exit(EXIT_FAILURE);
+    }
+
     uint32_t nbrPrimes = strtoul(argv[1],NULL,10);//Getting number of primes to find from stdin at lunch
     printf("Nbr Primes to find : %d\n",nbrPrimes);
 
@@ -46,8 +55,8 @@ int main(int argc, char *argv[]) {
         for (uint32_t k = 0; k < 2 && cpt < nbrPrimes; ++k) {
             //Compute next test number
             testNum = 6*index + (k?1:-1);
-            if(isPrimeWithMem(testNum,primes,cpt))//For the tests using previously memorised primes
-            //if(isPrime(testNum))
+            //if(isPrimeWithMem(testNum,primes,cpt))//For the tests using previously memorised primes
+            if(isPrime(testNum))
             {
                 primes[cpt] = testNum;
                 cpt++;
@@ -78,19 +87,27 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-
 bool isPrime(uint32_t num) {
     uint32_t sqrtNum = squareRoot(num);
     bool result = true;
-    for (int i = 2; i <= sqrtNum; ++i)
-        if(!(num % i))
-        {
-            result = false;
-            break;
+
+    #pragma omp parallel default(none) shared(result) firstprivate(num, sqrtNum) num_threads(NBR_THREADS)
+    {
+        #pragma omp for schedule(dynamic)
+        for (int i = 2; i <= sqrtNum; ++i) {
+           // printf("%d -> %d: %d\n", omp_get_thread_num(),  num, i);
+            if (!(num % i)) {
+                #pragma omp critical
+                {
+                    result = false;
+                }
+                #pragma omp cancel for
+            }
         }
+    }
     return result;
 }
-
+//TODO Parallelise the code below using pragma and cancellation points.
 bool isPrimeWithMem(uint32_t num, const uint32_t *previousPrimes, uint32_t nbrPreviousPrimes)
 {
     uint32_t sqrtNum = squareRoot(num);
@@ -122,7 +139,7 @@ bool isPrimeWithMem(uint32_t num, const uint32_t *previousPrimes, uint32_t nbrPr
             result = false;
             break;
         }
-
+//TODO Add cache hit and miss counters and print them.
 /*Dumping cache content in file for testing
     if(num == 15485863) {
         FILE *pfile = NULL;
